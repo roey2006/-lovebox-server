@@ -9,18 +9,24 @@
     h1 { color: #ff6b9d; margin-bottom: 20px; }
     canvas { background: white; border-radius: 12px; touch-action: none; }
     .buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
-    button { padding: 12px 24px; border: none; border-radius: 25px; font-size: 16px; cursor: pointer; font-weight: bold; }
+    button { padding: 12px 20px; border: none; border-radius: 25px; font-size: 15px; cursor: pointer; font-weight: bold; }
     #sendBtn { background: #ff6b9d; color: white; }
     #clearBtn { background: #444; color: white; }
+    .shapes { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    .shape-btn { padding: 8px 16px; border: none; border-radius: 20px; font-size: 20px; cursor: pointer; background: #2a2a4e; color: white; }
+    .shape-btn:hover { background: #ff6b9d; }
     .colors { display: flex; gap: 8px; margin-top: 12px; }
     .color { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
     .color.active { border-color: white; }
     #status { color: #ff6b9d; margin-top: 10px; font-size: 14px; height: 20px; }
+    .size-slider { margin-top: 12px; display: flex; align-items: center; gap: 10px; color: white; }
+    input[type=range] { width: 120px; }
   </style>
 </head>
 <body>
   <h1>💌 Lovebox</h1>
   <canvas id="canvas" width="300" height="300"></canvas>
+
   <div class="colors">
     <div class="color active" style="background:#000000" data-color="#000000"></div>
     <div class="color" style="background:#ff0000" data-color="#ff0000"></div>
@@ -29,6 +35,21 @@
     <div class="color" style="background:#00aa00" data-color="#00aa00"></div>
     <div class="color" style="background:#ffffff;border:2px solid #555" data-color="#ffffff"></div>
   </div>
+
+  <div class="size-slider">
+    <span>🖊️</span>
+    <input type="range" id="brushSize" min="2" max="20" value="4">
+    <span>🖌️</span>
+  </div>
+
+  <div class="shapes">
+    <button class="shape-btn" data-shape="heart">❤️</button>
+    <button class="shape-btn" data-shape="star">⭐</button>
+    <button class="shape-btn" data-shape="flower">🌸</button>
+    <button class="shape-btn" data-shape="smile">😊</button>
+    <button class="shape-btn" data-shape="text">✍️ טקסט</button>
+  </div>
+
   <div class="buttons">
     <button id="clearBtn">🗑️ נקה</button>
     <button id="sendBtn">💌 שלח!</button>
@@ -41,6 +62,7 @@
     const ctx = canvas.getContext("2d");
     let drawing = false;
     let color = "#000000";
+    let brushSize = 4;
 
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, 300, 300);
@@ -54,11 +76,11 @@
       return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
 
-    canvas.addEventListener("mousedown", e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
-    canvas.addEventListener("mousemove", e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.stroke(); });
+    canvas.addEventListener("mousedown", e => { if (document.querySelector(".shape-btn.selected")) return; drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener("mousemove", e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = color; ctx.lineWidth = brushSize; ctx.lineCap = "round"; ctx.stroke(); });
     canvas.addEventListener("mouseup", () => drawing = false);
-    canvas.addEventListener("touchstart", e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
-    canvas.addEventListener("touchmove", e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.stroke(); });
+    canvas.addEventListener("touchstart", e => { if (document.querySelector(".shape-btn.selected")) return; e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener("touchmove", e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = color; ctx.lineWidth = brushSize; ctx.lineCap = "round"; ctx.stroke(); });
     canvas.addEventListener("touchend", () => drawing = false);
 
     document.querySelectorAll(".color").forEach(el => {
@@ -69,9 +91,108 @@
       });
     });
 
+    document.getElementById("brushSize").addEventListener("input", e => {
+      brushSize = e.target.value;
+    });
+
+    function drawHeart(x, y, size) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x, y + size / 4);
+      ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 4);
+      ctx.bezierCurveTo(x - size / 2, y + size / 2, x, y + size * 0.75, x, y + size);
+      ctx.bezierCurveTo(x, y + size * 0.75, x + size / 2, y + size / 2, x + size / 2, y + size / 4);
+      ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawStar(x, y, size) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        const px = x + size * Math.cos(angle);
+        const py = y + size * Math.sin(angle);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawFlower(x, y, size) {
+      ctx.save();
+      ctx.fillStyle = color;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3;
+        ctx.beginPath();
+        ctx.ellipse(x + Math.cos(angle) * size / 2, y + Math.sin(angle) * size / 2, size / 3, size / 5, angle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, size / 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFD700";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSmile(x, y, size) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = brushSize;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x - size / 3, y - size / 4, size / 8, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + size / 3, y - size / 4, size / 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y + size / 6, size / 2, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    canvas.addEventListener("click", e => {
+      const activeShape = document.querySelector(".shape-btn.selected");
+      if (!activeShape) return;
+      const p = getPos(e);
+      const shape = activeShape.dataset.shape;
+      if (shape === "heart") drawHeart(p.x, p.y - 40, 80);
+      else if (shape === "star") drawStar(p.x, p.y, 50);
+      else if (shape === "flower") drawFlower(p.x, p.y, 50);
+      else if (shape === "smile") drawSmile(p.x, p.y, 50);
+      else if (shape === "text") {
+        const text = prompt("מה לכתוב?");
+        if (text) {
+          ctx.font = "bold 30px Arial";
+          ctx.fillStyle = color;
+          ctx.textAlign = "center";
+          ctx.fillText(text, p.x, p.y);
+        }
+      }
+    });
+
+    document.querySelectorAll(".shape-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".shape-btn").forEach(b => { b.classList.remove("selected"); b.style.background = "#2a2a4e"; });
+        btn.classList.add("selected");
+        btn.style.background = "#ff6b9d";
+        canvas.style.cursor = "crosshair";
+      });
+    });
+
     document.getElementById("clearBtn").addEventListener("click", () => {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, 300, 300);
+      document.querySelectorAll(".shape-btn").forEach(b => { b.classList.remove("selected"); b.style.background = "#2a2a4e"; });
+      canvas.style.cursor = "default";
     });
 
     document.getElementById("sendBtn").addEventListener("click", async () => {
