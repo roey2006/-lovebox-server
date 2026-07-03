@@ -1,10 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import base64
 
 app = Flask(__name__)
 
 current_image = None
 new_message = False
+
+@app.route('/')
+def index():
+    return send_file('draw.html')
 
 @app.route('/send', methods=['POST'])
 def send_image():
