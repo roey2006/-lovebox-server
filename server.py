@@ -1,12 +1,13 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 import base64
 from PIL import Image
 import io
+import struct
 
 app = Flask(__name__)
 
 current_image = None
-current_pixels = None
+current_bmp = None
 new_message = False
 
 @app.route('/')
@@ -15,22 +16,19 @@ def index():
 
 @app.route('/send', methods=['POST'])
 def send_image():
-    global current_image, current_pixels, new_message
+    global current_image, current_bmp, new_message
     data = request.get_json()
     current_image = data['image']
     
     img_data = base64.b64decode(current_image.split(',')[1])
     img = Image.open(io.BytesIO(img_data)).convert('RGB')
     img = img.resize((160, 128), Image.LANCZOS)
-
-    pixels = []
-    for y in range(128):
-        for x in range(160):
-            r, g, b = img.getpixel((x, y))
-            rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
-            pixels.append(rgb565)
     
-    current_pixels = pixels
+    # שמירה כ-BMP
+    bmp_buffer = io.BytesIO()
+    img.save(bmp_buffer, format='BMP')
+    current_bmp = bmp_buffer.getvalue()
+    
     new_message = True
     return jsonify({'status': 'ok'})
 
@@ -43,11 +41,11 @@ def check_message():
 
 @app.route('/image', methods=['GET'])
 def get_image():
-    global new_message, current_pixels
+    global new_message, current_bmp
     new_message = False
-    if current_pixels is None:
-        return jsonify({'pixels': []})
-    return jsonify({'pixels': current_pixels})
+    if current_bmp is None:
+        return jsonify({'error': 'no image'})
+    return Response(current_bmp, mimetype='image/bmp')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
