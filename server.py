@@ -23,7 +23,7 @@ def send_image():
     # המרת התמונה ל-RGB565
     img_data = base64.b64decode(current_image.split(',')[1])
     img = Image.open(io.BytesIO(img_data)).convert('RGB')
-    img = img.resize((160, 128))
+    img = img.resize((128, 160))
     
     pixels = []
     for y in range(128):
