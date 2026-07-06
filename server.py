@@ -21,11 +21,11 @@ def send_image():
     
     img_data = base64.b64decode(current_image.split(',')[1])
     img = Image.open(io.BytesIO(img_data)).convert('RGB')
-    img = img.resize((128, 160))
-    
+    img = img.resize((160, 128))
+
     pixels = []
-    for y in range(160):
-        for x in range(128):
+    for y in range(128):
+        for x in range(160):
             r, g, b = img.getpixel((x, y))
             rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
             pixels.append(rgb565)
