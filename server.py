@@ -21,7 +21,7 @@ def send_image():
     
     img_data = base64.b64decode(current_image.split(',')[1])
     img = Image.open(io.BytesIO(img_data)).convert('RGB')
-    img = img.resize((160, 128))
+    img = img.resize((160, 128), Image.LANCZOS)
 
     pixels = []
     for y in range(128):
